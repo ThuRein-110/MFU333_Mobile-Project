@@ -1,0 +1,35 @@
+
+name: frontend
+description: "MFU333 Flutter Frontend"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # API & Authentication
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+
+  # Date & Time
+  intl: ^0.19.0
+
+  # QR Code
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^6.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
