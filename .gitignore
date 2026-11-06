@@ -1,0 +1,10 @@
+.DS_Store
+.vercel/
+.env
+.env.*
+!.env.example
+*.sql
+!backend/mfu-reg-backend/scripts/schema-postgres.sql
+*.pem
+*.crt
+backend/mfu-reg-backend/public/

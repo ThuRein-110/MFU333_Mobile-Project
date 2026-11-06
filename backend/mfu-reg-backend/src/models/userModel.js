@@ -3,7 +3,7 @@ const db = require("../config/db");
 // ค้นหาผู้ใช้จาก Email
 const findUserByEmail = async (email) => {
     const [rows] = await db.query(
-        "SELECT * FROM users WHERE email = ?",
+        "SELECT * FROM users WHERE LOWER(email) = LOWER(?)",
         [email]
     );
 
@@ -26,7 +26,7 @@ const createLecturer = async (fullName, email, passwordHash) => {
     const [result] = await db.query(
         `INSERT INTO users
         (student_code, full_name, email, password_hash, role, must_change_password)
-        VALUES (NULL, ?, ?, ?, 'lecturer', TRUE)`,
+        VALUES (NULL, ?, ?, ?, 'lecturer', 1)`,
         [fullName, email, passwordHash]
     );
 
@@ -37,7 +37,7 @@ const changePassword = async (userId, passwordHash) => {
     const [result] = await db.query(
         `UPDATE users
          SET password_hash = ?,
-             must_change_password = FALSE,
+             must_change_password = 0,
              updated_at = CURRENT_TIMESTAMP
          WHERE user_id = ?`,
         [passwordHash, userId]

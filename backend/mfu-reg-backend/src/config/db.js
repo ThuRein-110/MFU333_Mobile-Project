@@ -1,16 +1,19 @@
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 
-const mysql = require("mysql2/promise");
+const { databaseOptions, databaseDialect } = require("./databaseOptions");
 
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+let db;
+if (databaseDialect() === "postgres") {
+    const { Pool, types } = require("pg");
+    const { createPostgresAdapter, postgresOptions } = require("./postgresAdapter");
+    // The app's counts and point totals are small integers, as in the MySQL API.
+    types.setTypeParser(20, (value) => Number.isSafeInteger(Number(value)) ? Number(value) : value);
+    types.setTypeParser(1114, (value) => new Date(`${value.replace(" ", "T")}Z`));
+    const pool = new Pool(postgresOptions(databaseOptions()));
+    pool.on("error", (error) => console.error("Database pool error:", error.code || "unknown"));
+    db = createPostgresAdapter(pool);
+} else {
+    db = require("mysql2/promise").createPool(databaseOptions());
+}
 
 module.exports = db;

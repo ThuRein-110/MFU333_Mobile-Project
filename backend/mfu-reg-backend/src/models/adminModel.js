@@ -6,10 +6,10 @@ const getUserStats = async () => {
     const [rows] = await db.query(`
         SELECT
             COUNT(*) AS total_users,
-            SUM(role = 'student') AS total_students,
-            SUM(role = 'lecturer') AS total_lecturers,
-            SUM(role = 'admin') AS total_admins,
-            SUM(is_active = 1) AS active_users
+            SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END) AS total_students,
+            SUM(CASE WHEN role = 'lecturer' THEN 1 ELSE 0 END) AS total_lecturers,
+            SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS total_admins,
+            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_users
         FROM users
     `);
 
@@ -21,11 +21,11 @@ const getActivityStats = async () => {
     const [rows] = await db.query(`
         SELECT
             COUNT(*) AS total_activities,
-            SUM(status = 'draft') AS draft_activities,
-            SUM(status = 'published') AS published_activities,
-            SUM(status = 'ongoing') AS ongoing_activities,
-            SUM(status = 'completed') AS completed_activities,
-            SUM(status = 'cancelled') AS cancelled_activities
+            SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) AS draft_activities,
+            SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) AS published_activities,
+            SUM(CASE WHEN status = 'ongoing' THEN 1 ELSE 0 END) AS ongoing_activities,
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_activities,
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_activities
         FROM activities
     `);
 
@@ -37,8 +37,8 @@ const getCheckinStats = async () => {
     const [rows] = await db.query(`
         SELECT
             COUNT(*) AS total_checkins,
-            SUM(verification_status = 'verified') AS successful_checkins,
-            SUM(verification_status = 'rejected') AS rejected_checkins
+            SUM(CASE WHEN verification_status = 'verified' THEN 1 ELSE 0 END) AS successful_checkins,
+            SUM(CASE WHEN verification_status = 'rejected' THEN 1 ELSE 0 END) AS rejected_checkins
         FROM activity_checkins
     `);
 
@@ -105,9 +105,9 @@ const getAllUsers = async (search, role) => {
     if (search) {
         sql += `
             AND (
-                student_code LIKE ?
-                OR full_name LIKE ?
-                OR email LIKE ?
+                LOWER(student_code) LIKE LOWER(?)
+                OR LOWER(full_name) LIKE LOWER(?)
+                OR LOWER(email) LIKE LOWER(?)
             )
         `;
 

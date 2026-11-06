@@ -6,10 +6,10 @@ const getMyActivityStats = async (lecturerId) => {
     const [rows] = await db.query(
         `SELECT
             COUNT(*) AS total_activities,
-            COALESCE(SUM(status = 'published'), 0) AS published_activities,
-            COALESCE(SUM(status = 'ongoing'), 0) AS ongoing_activities,
-            COALESCE(SUM(status = 'completed'), 0) AS completed_activities,
-            COALESCE(SUM(status = 'cancelled'), 0) AS cancelled_activities
+            COALESCE(SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END), 0) AS published_activities,
+            COALESCE(SUM(CASE WHEN status = 'ongoing' THEN 1 ELSE 0 END), 0) AS ongoing_activities,
+            COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) AS completed_activities,
+            COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0) AS cancelled_activities
          FROM activities
          WHERE organizer_id = ?`,
         [lecturerId]

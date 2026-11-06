@@ -1,2 +1,10 @@
 node_modules/
 .env
+.env.*
+!.env.example
+.vercel/
+public/
+*.sql
+!scripts/schema-postgres.sql
+*.pem
+*.crt

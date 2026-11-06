@@ -19,6 +19,7 @@ class Mfu333App extends StatelessWidget {
       title: 'MFU333',
       theme: ThemeData(
         useMaterial3: true,
+        fontFamilyFallback: const ['NotoSansThai'],
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1265E8), primary: const Color(0xFF1265E8)),
         scaffoldBackgroundColor: const Color(0xFFF4F7FB),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.white, foregroundColor: navy, elevation: 0),
