@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../l10n/app_strings.dart';
+import '../widgets/language_switcher.dart';
 import 'dashboard_screen.dart';
 import 'management_screen.dart';
 import 'password_screen.dart';
@@ -72,9 +74,10 @@ class _AppShellState extends State<AppShell> {
     if (_role == 'student') return [0, 1, 4, 13, 15];
     if (_role == 'lecturer') {
       // Lecturer can manage/generate QR (index 5), but cannot scan/check-in (index 4).
-      return List<int>.generate(titles.length, (i) => i)
-          .where((i) => i != 4)
-          .toList();
+      return List<int>.generate(
+        titles.length,
+        (i) => i,
+      ).where((i) => i != 4).toList();
     }
     return List<int>.generate(titles.length, (i) => i);
   }
@@ -103,7 +106,10 @@ class _AppShellState extends State<AppShell> {
     } else if (selected == 15) {
       page = const PasswordScreen();
     } else {
-      page = ManagementScreen(index: selected, title: titles[selected]);
+      page = ManagementScreen(
+        index: selected,
+        title: context.tr(titles[selected]),
+      );
     }
 
     return Scaffold(
@@ -115,7 +121,7 @@ class _AppShellState extends State<AppShell> {
               children: [
                 Container(
                   height: 62,
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  padding: EdgeInsets.symmetric(horizontal: wide ? 22 : 12),
                   color: Colors.white,
                   child: Row(
                     children: [
@@ -123,8 +129,10 @@ class _AppShellState extends State<AppShell> {
                         IconButton(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('เมนูอยู่ในปุ่มรายการด้านล่าง'),
+                              SnackBar(
+                                content: Text(
+                                  context.tr('เมนูอยู่ในปุ่มรายการด้านล่าง'),
+                                ),
                               ),
                             );
                           },
@@ -139,26 +147,32 @@ class _AppShellState extends State<AppShell> {
                         ),
                       ),
                       const Spacer(),
-                      const Icon(
-                        Icons.notifications_none,
-                        color: Color(0xFF52657A),
-                      ),
-                      const SizedBox(width: 18),
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: const Color(0xFFE5F0FF),
-                        child: Text(
-                          (user['full_name'] ?? 'U')
-                              .toString()
-                              .characters
-                              .first
-                              .toUpperCase(),
-                          style: const TextStyle(color: Color(0xFF1265E8)),
+                      const LanguageSwitcher(),
+                      if (MediaQuery.sizeOf(context).width >= 650) ...[
+                        const Icon(
+                          Icons.notifications_none,
+                          color: Color(0xFF52657A),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(user['full_name']?.toString() ?? 'ผู้ใช้งาน'),
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 18),
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: const Color(0xFFE5F0FF),
+                          child: Text(
+                            (user['full_name'] ?? 'U')
+                                .toString()
+                                .characters
+                                .first
+                                .toUpperCase(),
+                            style: const TextStyle(color: Color(0xFF1265E8)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          user['full_name']?.toString() ??
+                              context.tr('ผู้ใช้งาน'),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
                       PopupMenuButton<String>(
                         onSelected: (v) async {
                           if (v == 'logout') {
@@ -179,14 +193,14 @@ class _AppShellState extends State<AppShell> {
                             });
                           }
                         },
-                        itemBuilder: (_) => const [
+                        itemBuilder: (_) => [
                           PopupMenuItem(
                             value: 'password',
-                            child: Text('เปลี่ยนรหัสผ่าน'),
+                            child: Text(context.tr('เปลี่ยนรหัสผ่าน')),
                           ),
                           PopupMenuItem(
                             value: 'logout',
-                            child: Text('ออกจากระบบ'),
+                            child: Text(context.tr('ออกจากระบบ')),
                           ),
                         ],
                       ),
@@ -202,7 +216,7 @@ class _AppShellState extends State<AppShell> {
       bottomNavigationBar: wide
           ? null
           : NavigationBar(
-              selectedIndex: mobileIndices.indexOf(selected) < 0
+              selectedIndex: !mobileIndices.contains(selected)
                   ? 0
                   : mobileIndices.indexOf(selected),
               onDestinationSelected: (v) {
@@ -214,7 +228,14 @@ class _AppShellState extends State<AppShell> {
                 for (final i in mobileIndices)
                   NavigationDestination(
                     icon: Icon(icons[i]),
-                    label: titles[i] == 'ภาพรวมระบบ' ? 'ภาพรวม' : titles[i],
+                    label: context.tr(switch (i) {
+                      0 => 'ภาพรวม',
+                      2 => 'รายละเอียด',
+                      3 => 'ผู้เข้าร่วม',
+                      13 => 'คะแนนสะสม',
+                      15 => 'รหัสผ่าน',
+                      _ => titles[i],
+                    }),
                   ),
               ],
             ),
@@ -222,68 +243,73 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _sidebar() {
-    return Container(
+    return SizedBox(
       width: 238,
-      color: const Color(0xFF102A4C),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.account_balance, color: Colors.white),
-              SizedBox(width: 10),
-              Text(
-                'MFU333',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+      child: Material(
+        color: const Color(0xFF102A4C),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.account_balance, color: Colors.white),
+                SizedBox(width: 10),
+                Text(
+                  'MFU333',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _visibleMenuIndices.length,
+                itemBuilder: (_, position) {
+                  final i = _visibleMenuIndices[position];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 2,
+                    ),
+                    child: ListTile(
+                      dense: true,
+                      selected: selected == i,
+                      selectedTileColor: const Color(0xFF2366A7),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      leading: Icon(icons[i], color: Colors.white, size: 19),
+                      title: Text(
+                        context.tr(titles[i]),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                      onTap: () {
+                        setState(() {
+                          selected = i;
+                        });
+                      },
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _visibleMenuIndices.length,
-              itemBuilder: (_, position) {
-                final i = _visibleMenuIndices[position];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 2,
-                  ),
-                  child: ListTile(
-                    dense: true,
-                    selected: selected == i,
-                    selectedTileColor: const Color(0xFF2366A7),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    leading: Icon(icons[i], color: Colors.white, size: 19),
-                    title: Text(
-                      titles[i],
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                    onTap: () {
-                      setState(() {
-                        selected = i;
-                      });
-                    },
-                  ),
-                );
-              },
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'Campus Activity System',
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text(
+                'Campus Activity System',
+                style: TextStyle(color: Colors.white54, fontSize: 11),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

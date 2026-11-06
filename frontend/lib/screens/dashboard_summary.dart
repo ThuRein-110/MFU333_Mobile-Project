@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/app_strings.dart';
+
 class DashboardSummary extends StatelessWidget {
   const DashboardSummary({super.key, required this.role, required this.data});
 
@@ -28,7 +30,7 @@ class DashboardSummary extends StatelessWidget {
               SizedBox(
                 width: width,
                 height: role == 'admin' ? 288 : 156,
-                child: _card(metric),
+                child: _card(context, metric),
               ),
           ],
         );
@@ -36,7 +38,7 @@ class DashboardSummary extends StatelessWidget {
     );
   }
 
-  Widget _card(_Metric metric) => Card(
+  Widget _card(BuildContext context, _Metric metric) => Card(
     key: ValueKey('dashboard-metric-${metric.id}'),
     child: Padding(
       padding: const EdgeInsets.all(18),
@@ -49,7 +51,7 @@ class DashboardSummary extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  metric.label,
+                  context.tr(metric.label),
                   style: const TextStyle(
                     color: Color(0xFF52657A),
                     fontWeight: FontWeight.w600,
@@ -77,7 +79,7 @@ class DashboardSummary extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      detail.label,
+                      context.tr(detail.label),
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF52657A),
@@ -98,7 +100,7 @@ class DashboardSummary extends StatelessWidget {
             ),
           if (metric.caption != null)
             Text(
-              metric.caption!,
+              context.tr(metric.caption!),
               style: const TextStyle(fontSize: 13, color: Colors.blueGrey),
             ),
         ],
@@ -134,7 +136,7 @@ class DashboardSummary extends StatelessWidget {
           _Detail('เผยแพร่แล้ว', _number(activities['published_activities'])),
           _Detail('กำลังดำเนินการ', _number(activities['ongoing_activities'])),
           _Detail('เสร็จสิ้น', _number(activities['completed_activities'])),
-          _Detail('ยกเลิก', _number(activities['cancelled_activities'])),
+          _Detail('ยกเลิกแล้ว', _number(activities['cancelled_activities'])),
         ],
       ),
       _Metric(
@@ -184,7 +186,7 @@ class DashboardSummary extends StatelessWidget {
     ),
     _Metric(
       'cancelled',
-      'ยกเลิก',
+      'ยกเลิกแล้ว',
       _number(stats['cancelled_activities']),
       Icons.event_busy,
     ),

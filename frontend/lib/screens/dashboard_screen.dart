@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 import '../services/api_service.dart';
 import 'dashboard_summary.dart';
 
@@ -59,10 +61,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Text(
             role == 'admin'
-                ? 'ภาพรวมระบบ'
+                ? context.tr('ภาพรวมระบบ')
                 : role == 'lecturer'
-                ? 'ภาพรวมอาจารย์'
-                : 'กิจกรรมที่เปิดให้เข้าร่วม',
+                ? context.tr('ภาพรวมอาจารย์')
+                : context.tr('กิจกรรมที่เปิดให้เข้าร่วม'),
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -70,7 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           const SizedBox(height: 5),
-          const Text('สรุปกิจกรรม การเข้าร่วม และคะแนนสะสม'),
+          Text(context.tr('สรุปกิจกรรม การเข้าร่วม และคะแนนสะสม')),
           const SizedBox(height: 18),
           if (loading) const LinearProgressIndicator(),
           if (error != null)
@@ -79,10 +81,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Text(error!, style: const TextStyle(color: Colors.red)),
+                    Text(
+                      context.tr(error!),
+                      style: const TextStyle(color: Colors.red),
+                    ),
                     TextButton(
                       onPressed: load,
-                      child: const Text('ลองอีกครั้ง'),
+                      child: Text(context.tr('ลองอีกครั้ง')),
                     ),
                   ],
                 ),
@@ -92,22 +97,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             DashboardSummary(role: role?.toString() ?? '', data: map),
             if (activities.isNotEmpty) ...[
               const SizedBox(height: 20),
-              const Text(
-                'กิจกรรมของฉัน',
+              Text(
+                context.tr('กิจกรรมของฉัน'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               ...activities.take(10).map((a) => _activityCard(a)),
             ] else if (role == 'lecturer')
-              const Card(
+              Card(
                 child: Padding(
                   padding: EdgeInsets.all(18),
-                  child: Text('ยังไม่มีกิจกรรมที่รับผิดชอบ'),
+                  child: Text(context.tr('ยังไม่มีกิจกรรมที่รับผิดชอบ')),
                 ),
               ),
           ],
           if (!loading && error == null && role == 'student') ...[
-            const Text(
-              'รายการกิจกรรม',
+            Text(
+              context.tr('รายการกิจกรรม'),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             ...activities.map((a) => _activityCard(a)),
@@ -127,11 +132,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Icon(Icons.event, color: Color(0xFF1265E8)),
         ),
         title: Text(
-          '${m['title'] ?? 'กิจกรรม'}',
+          '${m['title'] ?? context.tr('กิจกรรม')}',
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text('${m['location'] ?? '-'}  •  ${m['status'] ?? '-'}'),
-        trailing: Text('${m['points'] ?? 0} แต้ม'),
+        subtitle: Text(
+          '${m['location'] ?? '-'}  •  ${context.statusLabel(m['status'])}',
+        ),
+        trailing: Text(
+          context.tr('{points} แต้ม', args: {'points': '${m['points'] ?? 0}'}),
+        ),
       ),
     );
   }

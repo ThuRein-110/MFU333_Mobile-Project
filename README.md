@@ -4,6 +4,16 @@ The Flutter interface and Express API are deployed together on Vercel's Hobby
 plan. Aiven's free PostgreSQL service stores the database. App users only need a
 browser; XAMPP and local MySQL are not required.
 
+## Interface language
+
+Use the globe menu on the sign-in page or in the app header to choose **ไทย**
+or **English**. The choice applies across screens and is saved in the browser
+for future visits. Activity titles, descriptions, and names remain as entered.
+
+Interface labels and API message translations are maintained in
+`frontend/lib/l10n/app_strings.dart`. Flutter's built-in controls also follow
+the selected locale.
+
 ## Database connection
 
 The private local settings file is `backend/mfu-reg-backend/.env`.

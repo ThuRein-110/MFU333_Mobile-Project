@@ -5,9 +5,11 @@ Updated: 6 November 2026 (Asia/Bangkok).
 - App URL: https://mfu333-app.vercel.app
 - Hosting: Vercel Hobby, project `mfu333-app`, team `thurein-oos-projects`.
 - Project ID: `prj_8P1PJdfvA7q82mIDODktJGI9lFdm`.
-- Deployment ID: `dpl_6Hb4jYzPDcdwZcpJKncmJEAYBQud`.
+- Deployment ID: `dpl_GqMEAzxWEQ2C1LcrhU1B3EorPZbU`.
 - Interface and Express API are deployed together; browser API calls use the same origin.
 - The release bundles the Noto Sans Thai font and its OFL license.
+- A globe menu on the sign-in page and app header switches between Thai and
+  English; the choice is saved in the browser.
 - Database: Aiven PostgreSQL 18, Free plan, service `pg-352a72b3`.
 
 The private local connection file is `backend/mfu-reg-backend/.env`.
@@ -49,3 +51,15 @@ Local macOS dataless files blocked builds in Documents. The deployment used a
 fresh temporary checkout at `/private/tmp/mfu333-deploy-u2yumxjc`, with the same
 application changes and generated web assets. Local source edits remain in the
 user's repository. No paid resources were created.
+
+Language update verification: all 12 Flutter checks and `flutter analyze`
+passed, and the release web build succeeded. Tests cover English/Thai switching,
+saved preferences after restart, preserving form input and the current route,
+desktop/mobile navigation and forms, and translated API errors. The staged
+production JavaScript matched the tested local build and its database health
+check passed before promotion. Live desktop/mobile browser checks confirmed
+the sign-in language switch, English after refresh, and localized API errors
+with no JavaScript errors or failed requests.
+The authenticated admin dashboard also passed English/Thai switching and
+desktop/mobile checks against the live API; changing language did not reload
+its data.

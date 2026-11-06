@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
+
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -20,6 +23,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
   final search = TextEditingController();
   final activityId = TextEditingController();
   final qrToken = TextEditingController();
+  final participantActivityId = TextEditingController();
 
   String get role => '${ApiService.currentUser?['role'] ?? ''}';
   String get path {
@@ -38,6 +42,15 @@ class _ManagementScreenState extends State<ManagementScreen> {
   void initState() {
     super.initState();
     load();
+  }
+
+  @override
+  void dispose() {
+    search.dispose();
+    activityId.dispose();
+    qrToken.dispose();
+    participantActivityId.dispose();
+    super.dispose();
   }
 
   Future<void> load() async {
@@ -98,8 +111,8 @@ class _ManagementScreenState extends State<ManagementScreen> {
         SnackBar(
           content: Text(
             r is Map
-                ? '${r['message'] ?? 'ดำเนินการสำเร็จ'}'
-                : 'ดำเนินการสำเร็จ',
+                ? context.tr('${r['message'] ?? 'ดำเนินการสำเร็จ'}')
+                : context.tr('ดำเนินการสำเร็จ'),
           ),
         ),
       );
@@ -107,7 +120,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
+            .showSnackBar(SnackBar(content: Text(context.tr(e.toString()))));
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -161,8 +174,8 @@ class _ManagementScreenState extends State<ManagementScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Text(error!, style: const TextStyle(color: Colors.red)),
-          TextButton(onPressed: load, child: const Text('ลองอีกครั้ง')),
+          Text(context.tr(error!), style: const TextStyle(color: Colors.red)),
+          TextButton(onPressed: load, child: Text(context.tr('ลองอีกครั้ง'))),
         ],
       ),
     ),
@@ -176,9 +189,9 @@ class _ManagementScreenState extends State<ManagementScreen> {
           Expanded(
             child: TextField(
               controller: search,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixIcon: Icon(Icons.search),
-                hintText: 'ค้นหากิจกรรม',
+                hintText: context.tr('ค้นหากิจกรรม'),
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -188,7 +201,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
             FilledButton.icon(
               onPressed: _activityForm,
               icon: const Icon(Icons.add),
-              label: const Text('เพิ่มกิจกรรม'),
+              label: Text(context.tr('เพิ่มกิจกรรม')),
             ),
         ],
       ),
@@ -211,31 +224,29 @@ class _ManagementScreenState extends State<ManagementScreen> {
 
   Widget _studentJoinButton(Map<String, dynamic> activity) {
     final id = int.tryParse('${activity['activity_id']}');
-    final registrationStatus =
-        id == null ? null : registrationStatuses[id];
+    final registrationStatus = id == null ? null : registrationStatuses[id];
 
     if (registrationStatus == 'attended') {
-      return const Text(
-        'เช็กชื่อเข้าร่วมแล้ว',
-        style: TextStyle(
-          color: Colors.green,
-          fontWeight: FontWeight.w600,
-        ),
+      return Text(
+        context.tr('เช็กชื่อเข้าร่วมแล้ว'),
+        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
       );
     }
 
     if (registrationStatus == 'registered') {
       return OutlinedButton.icon(
-        onPressed: busy || id == null ? null : () => _confirmCancelRegistration(id),
+        onPressed: busy || id == null
+            ? null
+            : () => _confirmCancelRegistration(id),
         icon: const Icon(Icons.event_busy, size: 18),
-        label: const Text('ยกเลิกการเข้าร่วม'),
+        label: Text(context.tr('ยกเลิกการเข้าร่วม')),
         style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
       );
     }
 
     if ('${activity['status'] ?? ''}' != 'published') {
-      return const Text(
-        'ยังไม่เปิดรับสมัคร',
+      return Text(
+        context.tr('ยังไม่เปิดรับสมัคร'),
         style: TextStyle(color: Colors.grey),
       );
     }
@@ -244,7 +255,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
       onPressed: busy || id == null
           ? null
           : () => call('POST', '/api/registrations/$id'),
-      child: const Text('เข้าร่วมกิจกรรม'),
+      child: Text(context.tr('เข้าร่วมกิจกรรม')),
     );
   }
 
@@ -252,17 +263,19 @@ class _ManagementScreenState extends State<ManagementScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('ยืนยันยกเลิกการเข้าร่วม'),
-        content: const Text('ต้องการยกเลิกการเข้าร่วมกิจกรรมนี้ใช่หรือไม่?'),
+        title: Text(context.tr('ยืนยันยกเลิกการเข้าร่วม')),
+        content: Text(
+          context.tr('ต้องการยกเลิกการเข้าร่วมกิจกรรมนี้ใช่หรือไม่?'),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ไม่ใช่'),
+            child: Text(context.tr('ไม่ใช่')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('ยืนยันยกเลิก'),
+            child: Text(context.tr('ยืนยันยกเลิก')),
           ),
         ],
       ),
@@ -279,10 +292,10 @@ class _ManagementScreenState extends State<ManagementScreen> {
     bool actions = false,
   }) {
     if (data.isEmpty) {
-      return const Card(
+      return Card(
         child: Padding(
           padding: EdgeInsets.all(22),
-          child: Center(child: Text('ไม่พบข้อมูลจาก Backend')),
+          child: Center(child: Text(context.tr('ไม่พบข้อมูลจาก Backend'))),
         ),
       );
     }
@@ -292,7 +305,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
         child: DataTable(
           columns: [
             ...keys.map((k) => DataColumn(label: Text(_label(k)))),
-            if (actions) const DataColumn(label: Text('จัดการ')),
+            if (actions) DataColumn(label: Text(context.tr('จัดการ'))),
           ],
           rows: data.whereType<Map>().map((raw) {
             final m = Map<String, dynamic>.from(raw);
@@ -303,7 +316,9 @@ class _ManagementScreenState extends State<ManagementScreen> {
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 180),
                       child: Text(
-                        '${m[k] ?? '-'}',
+                        ['status', 'role'].contains(k)
+                            ? context.statusLabel(m[k])
+                            : '${m[k] ?? '-'}',
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -317,12 +332,15 @@ class _ManagementScreenState extends State<ManagementScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                tooltip: 'แก้ไข',
+                                tooltip: context.tr('แก้ไข'),
                                 onPressed: () => _activityForm(existing: m),
-                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
                               ),
                               IconButton(
-                                tooltip: 'ยกเลิกกิจกรรม',
+                                tooltip: context.tr('ยกเลิกกิจกรรม'),
                                 onPressed: () => _confirmCancel(m),
                                 icon: const Icon(
                                   Icons.delete_outline,
@@ -368,47 +386,63 @@ class _ManagementScreenState extends State<ManagementScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-        title: Text(existing == null ? 'เพิ่มกิจกรรม' : 'แก้ไขกิจกรรม'),
-        content: SizedBox(
-          width: 520,
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: selectedStatus,
-                    decoration: const InputDecoration(
-                      labelText: 'สถานะกิจกรรม',
+          title: Text(
+            existing == null
+                ? context.tr('เพิ่มกิจกรรม')
+                : context.tr('แก้ไขกิจกรรม'),
+          ),
+          content: SizedBox(
+            width: 520,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedStatus,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: context.tr('สถานะกิจกรรม'),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'draft',
+                          child: Text(
+                            context.tr('ฉบับร่าง'),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'published',
+                          child: Text(
+                            context.tr('เผยแพร่ / เปิดรับสมัคร'),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'cancelled',
+                          child: Text(
+                            context.tr('ยกเลิกกิจกรรม'),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() => selectedStatus = value);
+                        }
+                      },
                     ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'draft',
-                        child: Text('ฉบับร่าง'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'published',
-                        child: Text('เผยแพร่ / เปิดรับสมัคร'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'cancelled',
-                        child: Text('ยกเลิกกิจกรรม'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setDialogState(() => selectedStatus = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  ...fields.entries.map(
+                    const SizedBox(height: 12),
+                    ...fields.entries.map(
                       (e) => Padding(
                         padding: const EdgeInsets.only(bottom: 9),
                         child: TextFormField(
                           controller: e.value,
-                          decoration: InputDecoration(labelText: e.key),
+                          decoration: InputDecoration(
+                            labelText: context.fieldLabel(e.key),
+                          ),
                           validator: (v) =>
                               [
                                     'category_id',
@@ -418,29 +452,29 @@ class _ManagementScreenState extends State<ManagementScreen> {
                                     'end_at',
                                   ].contains(e.key) &&
                                   (v == null || v.isEmpty)
-                              ? 'กรุณากรอกข้อมูล'
+                              ? context.tr('กรุณากรอกข้อมูล')
                               : null,
                         ),
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.tr('ยกเลิก')),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) Navigator.pop(ctx, true);
+              },
+              child: Text(context.tr('บันทึก')),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) Navigator.pop(ctx, true);
-            },
-            child: const Text('บันทึก'),
-          ),
-        ],
-      ),
       ),
     );
     if (ok == true) {
@@ -475,16 +509,21 @@ class _ManagementScreenState extends State<ManagementScreen> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('ยืนยันยกเลิกกิจกรรม'),
-        content: Text('ต้องการยกเลิก "${m['title']}" หรือไม่?'),
+        title: Text(context.tr('ยืนยันยกเลิกกิจกรรม')),
+        content: Text(
+          context.tr(
+            'ต้องการยกเลิก "{title}" หรือไม่?',
+            args: {'title': '${m['title']}'},
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('กลับ'),
+            child: Text(context.tr('กลับ')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('ยืนยัน'),
+            child: Text(context.tr('ยืนยัน')),
           ),
         ],
       ),
@@ -497,8 +536,8 @@ class _ManagementScreenState extends State<ManagementScreen> {
   Widget _activityDetails() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text(
-        'รายละเอียดกิจกรรมจาก API /api/activities',
+      Text(
+        context.tr('รายละเอียดกิจกรรมจาก API /api/activities'),
         style: TextStyle(color: Colors.blueGrey),
       ),
       const SizedBox(height: 10),
@@ -518,17 +557,19 @@ class _ManagementScreenState extends State<ManagementScreen> {
       return FutureBuilder<dynamic>(
         future: ApiService.request('GET', '/api/registrations/my'),
         builder: (context, snapshot) {
-          if (snapshot.hasError) return Text(snapshot.error.toString());
+          if (snapshot.hasError) {
+            return Text(context.tr(snapshot.error.toString()));
+          }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           final d = ApiService.unwrap(snapshot.data);
           final list = d is List ? d : <dynamic>[];
           if (list.isEmpty) {
-            return const Card(
+            return Card(
               child: Padding(
                 padding: EdgeInsets.all(20),
-                child: Text('ยังไม่มีรายการลงทะเบียน'),
+                child: Text(context.tr('ยังไม่มีรายการลงทะเบียน')),
               ),
             );
           }
@@ -536,10 +577,10 @@ class _ManagementScreenState extends State<ManagementScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('กิจกรรม')),
-                  DataColumn(label: Text('สถานะ')),
-                  DataColumn(label: Text('จัดการ')),
+                columns: [
+                  DataColumn(label: Text(context.tr('กิจกรรม'))),
+                  DataColumn(label: Text(context.tr('สถานะ'))),
+                  DataColumn(label: Text(context.tr('จัดการ'))),
                 ],
                 rows: list.whereType<Map>().map((raw) {
                   final m = Map<String, dynamic>.from(raw);
@@ -550,16 +591,24 @@ class _ManagementScreenState extends State<ManagementScreen> {
                           '${m['title'] ?? m['activity_title'] ?? m['activity_id']}',
                         ),
                       ),
-                      DataCell(Text('${m['registration_status'] ?? m['status'] ?? '-'}')),
+                      DataCell(
+                        Text(
+                          context.statusLabel(
+                            m['registration_status'] ?? m['status'],
+                          ),
+                        ),
+                      ),
                       DataCell(
                         TextButton(
-                          onPressed: (m['registration_status'] ?? m['status']) == 'registered'
+                          onPressed:
+                              (m['registration_status'] ?? m['status']) ==
+                                  'registered'
                               ? () => call(
                                   'DELETE',
                                   '/api/registrations/${m['activity_id']}',
                                 )
                               : null,
-                          child: const Text('ยกเลิก'),
+                          child: Text(context.tr('ยกเลิก')),
                         ),
                       ),
                     ],
@@ -571,22 +620,22 @@ class _ManagementScreenState extends State<ManagementScreen> {
         },
       );
     }
-    final id = TextEditingController();
+    final id = participantActivityId;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'ค้นหาผู้ลงทะเบียนในกิจกรรม (Lecturer)',
+            Text(
+              context.tr('ค้นหาผู้ลงทะเบียนในกิจกรรม (Lecturer)'),
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: id,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Activity ID'),
+              decoration: InputDecoration(labelText: context.tr('รหัสกิจกรรม')),
             ),
             const SizedBox(height: 10),
             FilledButton(
@@ -602,7 +651,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
                   showDialog(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: const Text('รายชื่อผู้เข้าร่วม'),
+                      title: Text(context.tr('รายชื่อผู้เข้าร่วม')),
                       content: SizedBox(
                         width: 600,
                         child: SingleChildScrollView(child: Text(d.toString())),
@@ -610,19 +659,20 @@ class _ManagementScreenState extends State<ManagementScreen> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('ปิด'),
+                          child: Text(context.tr('ปิด')),
                         ),
                       ],
                     ),
                   );
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(e.toString())));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(context.tr(e.toString()))),
+                    );
                   }
                 }
               },
-              child: const Text('ดึงรายชื่อผู้ลงทะเบียน'),
+              child: Text(context.tr('ดึงรายชื่อผู้ลงทะเบียน')),
             ),
           ],
         ),
@@ -635,8 +685,8 @@ class _ManagementScreenState extends State<ManagementScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          const Text(
-            'สแกน QR เพื่ออ่าน Token',
+          Text(
+            context.tr('สแกน QR เพื่ออ่าน Token'),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
           ),
           const SizedBox(height: 12),
@@ -660,12 +710,12 @@ class _ManagementScreenState extends State<ManagementScreen> {
           TextField(
             controller: activityId,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Activity ID'),
+            decoration: InputDecoration(labelText: context.tr('รหัสกิจกรรม')),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: qrToken,
-            decoration: const InputDecoration(labelText: 'QR Token'),
+            decoration: InputDecoration(labelText: context.tr('QR Token')),
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
@@ -682,11 +732,13 @@ class _ManagementScreenState extends State<ManagementScreen> {
                     );
                   },
             icon: const Icon(Icons.verified),
-            label: const Text('ยืนยัน Check-in'),
+            label: Text(context.tr('ยืนยัน Check-in')),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Backend จะตรวจสอบ Campus Wi-Fi จาก IP ของคำขอจริง ไม่สามารถยืนยัน Wi-Fi จากหน้าจอแอปได้',
+          Text(
+            context.tr(
+              'Backend จะตรวจสอบ Campus Wi-Fi จาก IP ของคำขอจริง ไม่สามารถยืนยัน Wi-Fi จากหน้าจอแอปได้',
+            ),
             style: TextStyle(color: Colors.blueGrey, fontSize: 12),
           ),
         ],
@@ -701,17 +753,19 @@ class _ManagementScreenState extends State<ManagementScreen> {
         children: [
           const Icon(Icons.qr_code_2, size: 48, color: Color(0xFF1265E8)),
           const SizedBox(height: 8),
-          const Text(
-            'การจัดการ QR Code',
+          Text(
+            context.tr('การจัดการ QR Code'),
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const Text(
-            'Backend ปัจจุบันรองรับการสร้าง QR Token แต่ไม่มี API สำหรับดึงรายการ QR ทั้งหมด',
+          Text(
+            context.tr(
+              'Backend ปัจจุบันรองรับการสร้าง QR Token แต่ไม่มี API สำหรับดึงรายการ QR ทั้งหมด',
+            ),
           ),
           const SizedBox(height: 12),
           FilledButton(
             onPressed: () => _qrCreator(),
-            child: const Text('สร้าง QR Code'),
+            child: Text(context.tr('สร้าง QR Code')),
           ),
         ],
       ),
@@ -724,17 +778,17 @@ class _ManagementScreenState extends State<ManagementScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'สร้าง QR Code สำหรับกิจกรรม',
+          Text(
+            context.tr('สร้าง QR Code สำหรับกิจกรรม'),
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text('สร้าง QR Token ผ่าน Backend'),
+          Text(context.tr('สร้าง QR Token ผ่าน Backend')),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: busy ? null : _qrCreator,
             icon: const Icon(Icons.qr_code),
-            label: const Text('สร้าง QR Code'),
+            label: Text(context.tr('สร้าง QR Code')),
           ),
         ],
       ),
@@ -747,7 +801,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
     final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('สร้าง QR Code'),
+        title: Text(context.tr('สร้าง QR Code')),
         content: SizedBox(
           width: 440,
           child: Column(
@@ -755,18 +809,20 @@ class _ManagementScreenState extends State<ManagementScreen> {
             children: [
               TextField(
                 controller: id,
-                decoration: const InputDecoration(labelText: 'Activity ID'),
+                decoration: InputDecoration(
+                  labelText: context.tr('รหัสกิจกรรม'),
+                ),
               ),
               TextField(
                 controller: start,
-                decoration: const InputDecoration(
-                  labelText: 'Starts at (ISO 8601)',
+                decoration: InputDecoration(
+                  labelText: context.tr('เริ่มใช้งาน (ISO 8601)'),
                 ),
               ),
               TextField(
                 controller: end,
-                decoration: const InputDecoration(
-                  labelText: 'Expires at (ISO 8601)',
+                decoration: InputDecoration(
+                  labelText: context.tr('หมดอายุ (ISO 8601)'),
                 ),
               ),
             ],
@@ -775,7 +831,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c),
-            child: const Text('ยกเลิก'),
+            child: Text(context.tr('ยกเลิก')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(c, {
@@ -783,7 +839,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
               'start': start.text,
               'end': end.text,
             }),
-            child: const Text('สร้าง'),
+            child: Text(context.tr('สร้าง')),
           ),
         ],
       ),
@@ -801,7 +857,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
         showDialog(
           context: context,
           builder: (c) => AlertDialog(
-            title: const Text('สร้าง QR สำเร็จ'),
+            title: Text(context.tr('สร้าง QR สำเร็จ')),
             content: SizedBox(
               width: 280,
               child: Column(
@@ -815,7 +871,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(c),
-                child: const Text('ปิด'),
+                child: Text(context.tr('ปิด')),
               ),
             ],
           ),
@@ -823,7 +879,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.toString())));
+              .showSnackBar(SnackBar(content: Text(context.tr(e.toString()))));
         }
       }
     }
@@ -840,12 +896,17 @@ class _ManagementScreenState extends State<ManagementScreen> {
           const Icon(Icons.info_outline, size: 40, color: Colors.orange),
           const SizedBox(height: 8),
           Text(
-            'ยังเชื่อมต่อ ${widget.title} ไม่ได้',
+            context.tr(
+              'ยังเชื่อมต่อ {section} ไม่ได้',
+              args: {'section': widget.title},
+            ),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'ตรวจสอบ Backend ZIP แล้วไม่พบ Route สำหรับ CRUD หมวดหมู่, Network Zones หรือ Allowed IPs จึงแสดงสถานะตามจริงและไม่จำลองการบันทึก',
+          Text(
+            context.tr(
+              'ตรวจสอบ Backend ZIP แล้วไม่พบ Route สำหรับ CRUD หมวดหมู่, Network Zones หรือ Allowed IPs จึงแสดงสถานะตามจริงและไม่จำลองการบันทึก',
+            ),
           ),
         ],
       ),
@@ -863,8 +924,8 @@ class _ManagementScreenState extends State<ManagementScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'ประวัติคะแนนของบัญชีที่เข้าสู่ระบบ',
+          Text(
+            context.tr('ประวัติคะแนนของบัญชีที่เข้าสู่ระบบ'),
             style: TextStyle(color: Colors.blueGrey),
           ),
           const SizedBox(height: 10),
@@ -883,20 +944,20 @@ class _ManagementScreenState extends State<ManagementScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('จัดการบัญชีผู้ใช้จาก /api/admin/users'),
+        Text(context.tr('จัดการบัญชีผู้ใช้จาก /api/admin/users')),
         const SizedBox(height: 10),
         if (rows.isNotEmpty)
           Card(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('รหัส')),
-                  DataColumn(label: Text('ชื่อ')),
-                  DataColumn(label: Text('อีเมล')),
-                  DataColumn(label: Text('Role')),
-                  DataColumn(label: Text('สถานะ')),
-                  DataColumn(label: Text('จัดการ')),
+                columns: [
+                  DataColumn(label: Text(context.tr('รหัส'))),
+                  DataColumn(label: Text(context.tr('ชื่อ'))),
+                  DataColumn(label: Text(context.tr('อีเมล'))),
+                  DataColumn(label: Text(context.fieldLabel('role'))),
+                  DataColumn(label: Text(context.tr('สถานะ'))),
+                  DataColumn(label: Text(context.tr('จัดการ'))),
                 ],
                 rows: rows.whereType<Map>().map((u) {
                   final m = Map<String, dynamic>.from(u);
@@ -906,8 +967,14 @@ class _ManagementScreenState extends State<ManagementScreen> {
                       DataCell(Text('${m['user_id']}')),
                       DataCell(Text('${m['full_name']}')),
                       DataCell(Text('${m['email']}')),
-                      DataCell(Text('${m['role']}')),
-                      DataCell(Text(active ? 'ใช้งาน' : 'ปิดใช้งาน')),
+                      DataCell(Text(context.statusLabel(m['role']))),
+                      DataCell(
+                        Text(
+                          active
+                              ? context.tr('ใช้งาน')
+                              : context.tr('ปิดใช้งาน'),
+                        ),
+                      ),
                       DataCell(
                         TextButton(
                           onPressed: () => call(
@@ -915,7 +982,11 @@ class _ManagementScreenState extends State<ManagementScreen> {
                             '/api/admin/users/${m['user_id']}/status',
                             body: {'is_active': !active},
                           ),
-                          child: Text(active ? 'ปิดบัญชี' : 'เปิดบัญชี'),
+                          child: Text(
+                            active
+                                ? context.tr('ปิดบัญชี')
+                                : context.tr('เปิดบัญชี'),
+                          ),
                         ),
                       ),
                     ],
@@ -924,10 +995,10 @@ class _ManagementScreenState extends State<ManagementScreen> {
               ),
             ),
           ),
-        if (rows.isEmpty && !loading) const Text('ไม่มีข้อมูลผู้ใช้'),
+        if (rows.isEmpty && !loading) Text(context.tr('ไม่มีข้อมูลผู้ใช้')),
       ],
     );
   }
 
-  String _label(String s) => s.replaceAll('_', ' ').toUpperCase();
+  String _label(String s) => context.fieldLabel(s);
 }
