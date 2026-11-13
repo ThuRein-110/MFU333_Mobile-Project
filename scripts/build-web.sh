@@ -13,5 +13,6 @@ const root = process.argv[2];
 const target = path.join(root, 'backend/mfu-reg-backend/public');
 fs.mkdirSync(target, { recursive: true });
 fs.cpSync(path.join(root, 'frontend/build/web'), target, { recursive: true });
+fs.copyFileSync(path.join(root, 'login-data.txt'), path.join(target, 'login-data.txt'));
 console.log('Flutter web build copied to the backend public directory.');
 JS

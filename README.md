@@ -75,6 +75,10 @@ directory. A release web build calls the API on the same origin. Local Flutter
 development continues to use `http://localhost:3000`; a separate API can be
 selected with `--dart-define=API_BASE_URL=https://your-api.example`.
 
+The build also copies the root `login-data.txt` into `public/`, making the
+listed account credentials available at `/login-data.txt` on the deployed app.
+Edit the root file and rebuild/redeploy to update that page.
+
 To publish the linked Vercel project after making changes:
 
 ```sh
