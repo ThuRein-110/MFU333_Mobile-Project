@@ -1,0 +1,13 @@
+MFU333 Login Data
+
+Student
+Email: teststudent@mfu.ac.th
+Password: 12345678
+
+Lecturer
+Email: lecturer@mfu.ac.th
+Password: Lecturer@123
+
+Admin
+Email: admin@mfu.ac.th
+Password: 111
