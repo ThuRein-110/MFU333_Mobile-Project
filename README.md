@@ -103,3 +103,11 @@ demo setup.
 
 Free hosting and database services have usage limits; no paid plan is required
 by this configuration.
+
+The frontend includes the team's 23 regression tests from
+[`RAWEEROT666/unit-test` at `46a7a26`](https://github.com/RAWEEROT666/unit-test/commit/46a7a26896c72393c10a33440e017ff1c903319e).
+They cover sessions, login, navigation, role-specific dashboards, management
+screens, and password changes alongside the existing dashboard and language
+tests. API responses and connection failures are mocked, so `flutter test`
+does not need a running backend. The tests have been adapted to the current
+dashboard text and separate language and account menus.
