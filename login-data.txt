@@ -11,3 +11,30 @@ Password: Lecturer@123
 Admin
 Email: admin@mfu.ac.th
 Password: 111
+
+Demo Students
+These accounts require a password change after first sign-in.
+
+Demo Student 01
+Student code: DEMO-23E0D14B4E88
+Email: demo.student.23e0d14b4e88@example.invalid
+Password: PPgSb94rHB0WM1ox50X-VzHRA7!
+Points: 50
+
+Demo Student 02
+Student code: DEMO-7755C9AFE5B1
+Email: demo.student.7755c9afe5b1@example.invalid
+Password: 7LwhqpH9bY8jvPtUWjTkFVS5A7!
+Points: 100
+
+Demo Student 03
+Student code: DEMO-C6E9964E9CBC
+Email: demo.student.c6e9964e9cbc@example.invalid
+Password: ByHBEs-fwGX4FTo_5kYst9hZA7!
+Points: 150
+
+Demo Student 04
+Student code: DEMO-42280D1834DB
+Email: demo.student.42280d1834db@example.invalid
+Password: ypK1JGynl4tTZq6XlbosBAvaA7!
+Points: 100
