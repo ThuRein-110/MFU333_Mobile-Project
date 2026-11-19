@@ -26,12 +26,14 @@ dependencies:
   # QR Code
   qr_flutter: ^4.1.0
   mobile_scanner: ^6.0.2
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  image_picker_platform_interface: ^2.11.2
 
 flutter:
   uses-material-design: true

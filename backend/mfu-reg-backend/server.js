@@ -20,7 +20,13 @@ const lecturerRoutes = require("./src/routes/lecturerRoutes");
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '4.1mb' }));
+app.use((error, req, res, next) => {
+    if (error.type === 'entity.too.large') {
+        return res.status(413).json({ success: false, message: 'Choose an image smaller than 3 MB' });
+    }
+    return next(error);
+});
 
 // The Flutter release build and API share one HTTPS origin when hosted.
 const publicDirectory = path.join(__dirname, "public");

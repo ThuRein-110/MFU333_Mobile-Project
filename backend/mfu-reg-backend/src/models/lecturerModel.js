@@ -32,12 +32,15 @@ const getMyActivities = async (lecturerId) => {
         `SELECT
             a.activity_id,
             a.title,
+            a.location,
+            a.cover_image,
             a.status,
             a.start_at,
             a.end_at,
             a.points,
             a.max_participants,
-            COUNT(DISTINCT ar.registration_id) AS total_registrations,
+            COUNT(DISTINCT CASE WHEN ar.status IN ('registered', 'attended')
+                THEN ar.registration_id END) AS total_registrations,
             COUNT(DISTINCT CASE
                 WHEN ar.status = 'attended'
                 THEN ar.registration_id
@@ -64,6 +67,18 @@ const getActivityParticipants = async (activityId, lecturerId) => {
             u.student_code,
             u.full_name,
             u.email,
+            COALESCE((
+                SELECT SUM(
+                    CASE
+                        WHEN pt.transaction_type = 'earn' THEN pt.points
+                        WHEN pt.transaction_type = 'revoke' THEN -pt.points
+                        WHEN pt.transaction_type = 'adjust' THEN pt.points
+                        ELSE 0
+                    END
+                )
+                FROM point_transactions pt
+                WHERE pt.user_id = u.user_id
+            ), 0) AS total_points,
             ac.checked_in_at
          FROM activities a
          JOIN activity_registrations ar
@@ -77,6 +92,36 @@ const getActivityParticipants = async (activityId, lecturerId) => {
          AND a.organizer_id = ?
          ORDER BY ar.registered_at DESC`,
         [activityId, lecturerId]
+    );
+
+    return rows;
+};
+
+// Get student details for the lecturer's student directory.
+const getStudents = async () => {
+    const [rows] = await db.query(
+        `SELECT
+            u.user_id,
+            u.student_code,
+            u.full_name,
+            u.email,
+            COALESCE((
+                SELECT SUM(
+                    CASE
+                        WHEN pt.transaction_type = 'earn' THEN pt.points
+                        WHEN pt.transaction_type = 'revoke' THEN -pt.points
+                        WHEN pt.transaction_type = 'adjust' THEN pt.points
+                        ELSE 0
+                    END
+                )
+                FROM point_transactions pt
+                WHERE pt.user_id = u.user_id
+            ), 0) AS total_points,
+            u.is_active,
+            u.created_at
+         FROM users u
+         WHERE u.role = 'student'
+         ORDER BY u.full_name, u.user_id`
     );
 
     return rows;
@@ -139,6 +184,7 @@ module.exports = {
     getMyActivityStats,
     getMyActivities,
     getActivityParticipants,
+    getStudents,
     getMyActivityById,
     updateMyActivityStatus
 };

@@ -6,6 +6,14 @@ const lecturerController = require("../controllers/lecturerController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const authorizeRoles = require("../middlewares/roleMiddleware");
 
+// Get student details for the lecturer's student directory
+router.get(
+    "/students",
+    verifyToken,
+    authorizeRoles("lecturer"),
+    lecturerController.getStudents
+);
+
 // Lecturer dashboard
 router.get(
     "/dashboard",

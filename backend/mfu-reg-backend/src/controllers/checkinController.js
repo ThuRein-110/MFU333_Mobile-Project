@@ -2,6 +2,7 @@
 const db = require("../config/db");
 const checkinModel = require("../models/checkinModel");
 const qrService = require("../services/qrService");
+const { getClientIp } = require('../middlewares/wifiMiddleware');
 
 const createCheckin = async (req, res) => {
     try {
@@ -55,11 +56,16 @@ const createCheckin = async (req, res) => {
             });
         }
 
-        // Verify Wi-Fi
-        if (!req.wifi || !req.wifi.verified) {
-            return res.status(403).json({
+        // Prevent duplicate check-in
+        const existingCheckin = await checkinModel.findCheckin(
+            activity_id,
+            userId
+        );
+
+        if (existingCheckin) {
+            return res.status(409).json({
                 success: false,
-                message: "Campus Wi-Fi verification required"
+                message: "You have already checked in"
             });
         }
 
@@ -82,26 +88,13 @@ const createCheckin = async (req, res) => {
             });
         }
 
-        // Prevent duplicate check-in
-        const existingCheckin = await checkinModel.findCheckin(
-            activity_id,
-            userId
-        );
-
-        if (existingCheckin) {
-            return res.status(409).json({
-                success: false,
-                message: "You have already checked in"
-            });
-        }
-
         // Save check-in, update registration and award points
         const result = await checkinModel.createCheckin({
             activityId: activity_id,
             userId,
             registrationId: registration.registration_id,
             qrId: qr.qr_id,
-            verifiedIp: req.wifi.client_ip,
+            verifiedIp: getClientIp(req) || null,
             points: activity.points
         });
 

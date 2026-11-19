@@ -111,30 +111,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('participant activity ID survives language changes', (
+  testWidgets('selected participant activity survives language changes', (
     tester,
   ) async {
     final language = AppLanguage();
     addTearDown(language.dispose);
-    ApiService.currentUser = {'role': 'lecturer'};
-    await tester.pumpWidget(
-      localizedApp(
-        language,
-        const Scaffold(
-          body: ManagementScreen(index: 3, title: 'Registrations'),
-        ),
-      ),
+    ApiService.currentUser = {'role': 'lecturer', 'user_id': 7};
+    var activityLoads = 0;
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(
+          localizedApp(
+            language,
+            const Scaffold(
+              body: ManagementScreen(
+                index: 3,
+                title: 'Registrations',
+                activityId: 42,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Selected workshop'), findsOneWidget);
+        await language.select('en');
+        await tester.pumpAndSettle();
+        expect(find.text('Select activity'), findsOneWidget);
+        expect(
+          tester
+              .widget<DropdownButtonFormField<int>>(
+                find.byType(DropdownButtonFormField<int>),
+              )
+              .initialValue,
+          42,
+        );
+        expect(activityLoads, 1);
+        expect(tester.takeException(), isNull);
+      },
+      () => MockClient((request) async {
+        dynamic data = <dynamic>[];
+        if (request.url.path == '/api/activities') {
+          activityLoads++;
+          data = [
+            {
+              'activity_id': 42,
+              'organizer_id': 7,
+              'title': 'Selected workshop',
+              'status': 'published',
+            },
+          ];
+        } else {
+          expect(request.url.path, '/api/lecturer/activities/42/participants');
+        }
+        return http.Response(jsonEncode({'data': data}), 200);
+      }),
     );
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '42');
-    await language.select('en');
-    await tester.pumpAndSettle();
-    expect(find.text('View participants'), findsOneWidget);
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).controller!.text,
-      '42',
-    );
-    expect(tester.takeException(), isNull);
   });
 
   for (final width in [1200.0, 390.0]) {
@@ -174,7 +205,8 @@ void main() {
           expect(find.text('Location'), findsOneWidget);
           await tester.tap(find.text('Add activity'));
           await tester.pumpAndSettle();
-          expect(find.text('Activity status'), findsOneWidget);
+          expect(find.text('Activity status'), findsNothing);
+          expect(find.text('More settings (optional)'), findsOneWidget);
           expect(find.text('Activity title'), findsWidgets);
           await tester.tap(find.text('Save'));
           await tester.pumpAndSettle();
@@ -193,6 +225,21 @@ void main() {
                   'activities': {'total_activities': 2},
                   'checkins': {'total_checkins': 1},
                   'points': {'total_points_awarded': 100},
+                },
+              }),
+              200,
+            );
+          }
+          if (request.url.path == '/api/activities/options') {
+            return http.Response(
+              jsonEncode({
+                'data': {
+                  'categories': [
+                    {'category_id': 1, 'category_name': 'Workshop'},
+                  ],
+                  'zones': [
+                    {'zone_id': 1, 'zone_name': 'Campus'},
+                  ],
                 },
               }),
               200,

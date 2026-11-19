@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/screens/management_screen.dart';
 import 'package:frontend/services/api_service.dart';
@@ -40,7 +44,7 @@ void main() {
       }),
     );
 
-    testWidgets('TC02: ตรวจสอบการแสดงผลหน้าฟีเจอร์ที่ไม่รองรับ (Index 7)', (
+    testWidgets('TC02: retired placeholder pages do not expose controls', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -54,7 +58,11 @@ void main() {
       await tester.pump();
 
       expect(find.text('หมวดหมู่กิจกรรม'), findsOneWidget);
-      expect(find.text('ยังเชื่อมต่อ หมวดหมู่กิจกรรม ไม่ได้'), findsOneWidget);
+      expect(
+        find.text('หน้านี้ไม่พร้อมใช้งานสำหรับบัญชีของคุณ'),
+        findsOneWidget,
+      );
+      expect(find.byType(TextField), findsNothing);
     });
 
     testWidgets(
@@ -98,5 +106,48 @@ void main() {
         expect(find.text('ลองอีกครั้ง'), findsNothing);
       }),
     );
+
+    testWidgets('admin users table shows student contact and points', (
+      WidgetTester tester,
+    ) async {
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: ManagementScreen(index: 14, title: 'จัดการผู้ใช้งาน'),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('S-1'), findsOneWidget);
+          expect(find.text('Student Example'), findsOneWidget);
+          expect(find.text('student@example.invalid'), findsOneWidget);
+          expect(find.text('75'), findsOneWidget);
+        },
+        () => MockClient((request) async {
+          expect(request.url.path, '/api/admin/users');
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': [
+                {
+                  'user_id': 3,
+                  'student_code': 'S-1',
+                  'full_name': 'Student Example',
+                  'email': 'student@example.invalid',
+                  'role': 'student',
+                  'total_points': 75,
+                  'is_active': 1,
+                },
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+    });
   });
 }

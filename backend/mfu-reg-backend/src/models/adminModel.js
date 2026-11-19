@@ -94,6 +94,18 @@ const getAllUsers = async (search, role) => {
             full_name,
             email,
             role,
+            COALESCE((
+                SELECT SUM(
+                    CASE
+                        WHEN pt.transaction_type = 'earn' THEN pt.points
+                        WHEN pt.transaction_type = 'revoke' THEN -pt.points
+                        WHEN pt.transaction_type = 'adjust' THEN pt.points
+                        ELSE 0
+                    END
+                )
+                FROM point_transactions pt
+                WHERE pt.user_id = users.user_id
+            ), 0) AS total_points,
             is_active,
             created_at
         FROM users

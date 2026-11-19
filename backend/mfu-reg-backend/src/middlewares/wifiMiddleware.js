@@ -1,15 +1,24 @@
 
 const db = require("../config/db");
 const { isIpInRange } = require("../services/ipUtils");
+const { isIP } = require("node:net");
 
 const getClientIp = (req) => {
-    let ip = req.ip || req.socket.remoteAddress || "";
+    // On Vercel, the socket belongs to its proxy. The platform overwrites these
+    // client-IP headers: https://vercel.com/docs/headers/request-headers
+    // Local servers ignore forwarded headers supplied by arbitrary clients.
+    const forwarded = process.env.VERCEL === "1"
+        ? req.headers["x-vercel-forwarded-for"] ?? req.headers["x-forwarded-for"]
+        : undefined;
+    let ip = forwarded === undefined
+        ? req.ip || req.socket.remoteAddress || ""
+        : typeof forwarded === "string" ? forwarded.trim() : "";
 
     if (ip.startsWith("::ffff:")) {
         ip = ip.replace("::ffff:", "");
     }
 
-    return ip;
+    return isIP(ip) ? ip : "";
 };
 
 const verifyWifi = async (req, res, next) => {
@@ -63,4 +72,4 @@ const verifyWifi = async (req, res, next) => {
     }
 };
 
-module.exports = { verifyWifi };
+module.exports = { verifyWifi, getClientIp };

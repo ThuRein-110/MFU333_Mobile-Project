@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/foundation.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'l10n/app_language.dart';
 import 'services/api_service.dart';
+import 'services/activity_qr.dart';
 import 'screens/login_screen.dart';
 import 'screens/app_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ActivityQr.captureLink(Uri.base);
+  if (kIsWeb) {
+    MobileScannerPlatform.instance.setBarcodeLibraryScriptUrl(
+      Uri.base.resolve('vendor/zxing-0.21.3.min.js').toString(),
+    );
+  }
   await ApiService.restore();
   final language = AppLanguage();
   await language.restore();
@@ -41,6 +50,7 @@ class _Mfu333AppState extends State<Mfu333App> {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'MFU333',
+          initialRoute: '/',
           locale: language.locale,
           supportedLocales: const [Locale('th'), Locale('en')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,

@@ -1,6 +1,14 @@
 
 const db = require("../config/db");
 
+const getFormOptions = async () => {
+    const [[categories], [zones]] = await Promise.all([
+        db.query("SELECT category_id, category_name FROM activity_categories WHERE is_active = 1 ORDER BY category_name"),
+        db.query("SELECT zone_id, zone_name FROM network_zones WHERE is_active = 1 ORDER BY zone_name")
+    ]);
+    return { categories, zones };
+};
+
 // Get all activities
 const getAllActivities = async () => {
     const [rows] = await db.query(`
@@ -67,7 +75,7 @@ const createActivity = async (activityData) => {
             max_participants ?? null,
             points ?? 0,
             requires_registration ?? 1,
-            requires_wifi ?? 1,
+            requires_wifi ?? 0,
             status || "draft"
         ]
     );
@@ -146,6 +154,7 @@ const cancelActivity = async (activityId) => {
 };
 
 module.exports = {
+    getFormOptions,
     getAllActivities,
     getActivityById,
     createActivity,

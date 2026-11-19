@@ -5,6 +5,17 @@ const router = express.Router();
 const adminController = require("../controllers/adminController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const authorizeRoles = require("../middlewares/roleMiddleware");
+const settingsController = require("../controllers/settingsController");
+
+const settingsGuard = [verifyToken, authorizeRoles("admin")];
+router.get("/settings", ...settingsGuard, settingsController.getSettings);
+router.post("/settings/categories", ...settingsGuard, settingsController.createCategory);
+router.patch("/settings/categories/:id", ...settingsGuard, settingsController.updateCategory);
+router.post("/settings/zones", ...settingsGuard, settingsController.createZone);
+router.patch("/settings/zones/:id", ...settingsGuard, settingsController.updateZone);
+router.post("/settings/ips", ...settingsGuard, settingsController.createIp);
+router.patch("/settings/ips/:id", ...settingsGuard, settingsController.updateIp);
+router.delete("/settings/ips/:id", ...settingsGuard, settingsController.removeIp);
 
 // Admin dashboard summary
 router.get(

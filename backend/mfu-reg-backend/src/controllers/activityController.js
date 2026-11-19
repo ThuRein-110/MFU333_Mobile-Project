@@ -1,6 +1,14 @@
 
 const activityModel = require("../models/activityModel");
 
+const getFormOptions = async (req, res) => {
+    try {
+        return res.json({ success: true, data: await activityModel.getFormOptions() });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to load activity options" });
+    }
+};
+
 // GET all activities
 const getAllActivities = async (req, res) => {
     try {
@@ -64,7 +72,6 @@ const createActivity = async (req, res) => {
             max_participants,
             points,
             requires_registration,
-            requires_wifi,
             status
         } = req.body;
 
@@ -100,7 +107,7 @@ const createActivity = async (req, res) => {
             max_participants,
             points,
             requires_registration,
-            requires_wifi,
+            requires_wifi: 0,
             status: status || "draft"
         });
 
@@ -175,7 +182,8 @@ const updateActivity = async (req, res) => {
 
         const updatedData = {
             ...activity,
-            ...req.body
+            ...req.body,
+            requires_wifi: 0
         };
 
         delete updatedData.organizer_id;
@@ -244,6 +252,7 @@ const cancelActivity = async (req, res) => {
 };
 
 module.exports = {
+    getFormOptions,
     getAllActivities,
     getActivityById,
     createActivity,

@@ -109,6 +109,10 @@ void main() {
           .data,
       '2',
     );
+    await tester.scrollUntilVisible(
+      find.text('ยังไม่มีกิจกรรมที่รับผิดชอบ'),
+      120,
+    );
     expect(find.text('ยังไม่มีกิจกรรมที่รับผิดชอบ'), findsOneWidget);
     expect(find.textContaining('total_activities'), findsNothing);
     expect(tester.takeException(), isNull);

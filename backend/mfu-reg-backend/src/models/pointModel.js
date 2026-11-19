@@ -25,16 +25,18 @@ const getMyPoints = async (userId) => {
 const getPointHistory = async (userId) => {
     const [rows] = await db.query(
         `SELECT
-            transaction_id,
-            activity_id,
-            checkin_id,
-            points,
-            transaction_type,
-            description,
-            created_at
-         FROM point_transactions
-         WHERE user_id = ?
-         ORDER BY created_at DESC`,
+            pt.transaction_id,
+            pt.activity_id,
+            pt.checkin_id,
+            pt.points,
+            pt.transaction_type,
+            pt.description,
+            pt.created_at,
+            a.title AS activity_title
+         FROM point_transactions pt
+         LEFT JOIN activities a ON a.activity_id = pt.activity_id
+         WHERE pt.user_id = ?
+         ORDER BY pt.created_at DESC`,
         [userId]
     );
 

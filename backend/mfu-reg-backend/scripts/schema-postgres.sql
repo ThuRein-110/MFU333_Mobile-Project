@@ -42,7 +42,7 @@ CREATE TABLE activities (
   registration_deadline timestamp, max_participants integer,
   points integer NOT NULL DEFAULT 0,
   requires_registration smallint DEFAULT 1 CHECK (requires_registration IN (0,1)),
-  requires_wifi smallint DEFAULT 1 CHECK (requires_wifi IN (0,1)),
+  requires_wifi smallint DEFAULT 0 CHECK (requires_wifi IN (0,1)),
   status varchar(20) DEFAULT 'draft' CHECK (status IN ('draft','published','ongoing','completed','cancelled')),
   created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP

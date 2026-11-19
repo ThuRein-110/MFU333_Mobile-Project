@@ -19,7 +19,7 @@ const registerActivity = async (req, res) => {
         }
 
         // Check activity status
-        if (activity.status !== "published") {
+        if (!["published", "ongoing"].includes(activity.status)) {
             return res.status(400).json({
                 success: false,
                 message: "This activity is not available for registration"

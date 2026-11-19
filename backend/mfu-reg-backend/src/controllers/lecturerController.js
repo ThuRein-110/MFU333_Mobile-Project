@@ -1,6 +1,26 @@
 
 const lecturerModel = require("../models/lecturerModel");
 
+// Get student details for the lecturer's student directory
+const getStudents = async (req, res) => {
+    try {
+        const students = await lecturerModel.getStudents();
+
+        return res.json({
+            success: true,
+            message: "Student details retrieved successfully",
+            data: students
+        });
+    } catch (error) {
+        console.error("Get Lecturer Students Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve student details"
+        });
+    }
+};
+
 // Get lecturer dashboard
 const getDashboard = async (req, res) => {
     try {
@@ -40,6 +60,11 @@ const getActivityParticipants = async (req, res) => {
                 success: false,
                 message: "Invalid activity ID"
             });
+        }
+
+        const activity = await lecturerModel.getMyActivityById(activityId, lecturerId);
+        if (!activity) {
+            return res.status(404).json({ success: false, message: "Activity not found" });
         }
 
         const participants =
@@ -165,6 +190,7 @@ const updateMyActivityStatus = async (req, res) => {
 };
 
 module.exports = {
+    getStudents,
     getDashboard,
     getActivityParticipants,
     getMyActivityById,

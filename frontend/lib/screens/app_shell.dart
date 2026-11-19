@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../services/api_service.dart';
 import '../l10n/app_strings.dart';
+import '../navigation/app_navigation.dart';
+import '../services/api_service.dart';
+import '../services/activity_qr.dart';
 import '../widgets/language_switcher.dart';
+import '../widgets/student_activity_alerts.dart';
+import 'activities_screen.dart';
 import 'dashboard_screen.dart';
+import 'login_screen.dart';
 import 'management_screen.dart';
 import 'password_screen.dart';
-import 'login_screen.dart';
 
 class AppShell extends StatefulWidget {
   final bool forcePassword;
@@ -18,104 +22,114 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int selected = 0;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  AppPage selected = AppPage.overview;
+  AppPage activityPage = AppPage.activities;
+  int? activityContextId;
+  int? checkInActivityId;
 
-  final titles = const [
-    'ภาพรวมระบบ',
-    'กิจกรรม',
-    'รายละเอียดกิจกรรม',
-    'จัดการผู้ลงทะเบียน',
-    'เช็คอิน QR',
-    'จัดการ QR Code',
-    'เพิ่ม / แก้ไข QR',
-    'หมวดหมู่กิจกรรม',
-    'เพิ่ม / แก้ไขหมวดหมู่',
-    'พื้นที่เครือข่าย',
-    'เพิ่ม / แก้ไขพื้นที่',
-    'IP ที่อนุญาต',
-    'เพิ่ม / แก้ไข IP',
-    'ประวัติคะแนนสะสม',
-    'บัญชีผู้ใช้',
-    'เปลี่ยนรหัสผ่าน',
-  ];
+  bool get mustChangePassword =>
+      widget.forcePassword ||
+      ApiService.currentUser?['must_change_password'] == true ||
+      ApiService.currentUser?['must_change_password'] == 1;
 
-  final icons = const [
-    Icons.dashboard_outlined,
-    Icons.event_note,
-    Icons.event,
-    Icons.groups,
-    Icons.qr_code_scanner,
-    Icons.qr_code,
-    Icons.add_box,
-    Icons.category,
-    Icons.create,
-    Icons.wifi,
-    Icons.add_location_alt,
-    Icons.router,
-    Icons.add_link,
-    Icons.stars,
-    Icons.people,
-    Icons.lock_reset,
-  ];
+  AppNavigation get navigation =>
+      AppNavigation(ApiService.currentUser?['role']?.toString());
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.forcePassword) {
-      selected = 15;
+    ApiService.sessionInvalidated.addListener(_sessionInvalidated);
+    if (mustChangePassword) selected = AppPage.password;
+    if (!mustChangePassword &&
+        navigation.isStudent &&
+        ActivityQr.pendingCheckIn != null) {
+      selected = AppPage.checkIn;
+      checkInActivityId = ActivityQr.pendingCheckIn!.activityId;
     }
   }
 
-  String get _role =>
-      '${ApiService.currentUser?['role'] ?? ''}'.trim().toLowerCase();
-
-  List<int> get _visibleMenuIndices {
-    if (_role == 'student') return [0, 1, 4, 13, 15];
-    if (_role == 'lecturer') {
-      // Lecturer can manage/generate QR (index 5), but cannot scan/check-in (index 4).
-      return List<int>.generate(
-        titles.length,
-        (i) => i,
-      ).where((i) => i != 4).toList();
-    }
-    return List<int>.generate(titles.length, (i) => i);
+  @override
+  void dispose() {
+    ApiService.sessionInvalidated.removeListener(_sessionInvalidated);
+    super.dispose();
   }
 
-  List<int> get _mobileMenuIndices {
-    if (_role == 'student') return [0, 1, 4, 13, 15];
-    if (_role == 'lecturer') return [0, 1, 2, 3, 5];
-    return [0, 1, 2, 3, 4];
+  void _sessionInvalidated() {
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  }
+
+  void _selectPage(AppPage page) {
+    if (page == AppPage.activities) {
+      activityPage = AppPage.activities;
+      activityContextId = null;
+    }
+    setState(() => selected = page);
+    _scaffoldKey.currentState?.closeDrawer();
+  }
+
+  void _openPage(AppPage page, int? id) {
+    if (mustChangePassword) return;
+    final access = navigation;
+    if (access.activityPages.contains(page)) {
+      setState(() {
+        selected = AppPage.activities;
+        activityPage = page;
+        activityContextId = id;
+      });
+    } else if (access.primaryPages.contains(page)) {
+      setState(() {
+        selected = page;
+        if (page == AppPage.checkIn) checkInActivityId = id;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width > 900;
     final user = ApiService.currentUser ?? {};
-    final mobileIndices = _mobileMenuIndices;
+    final access = navigation;
+    final pages = mustChangePassword ? [AppPage.password] : access.primaryPages;
 
-    // Block direct/stale navigation to the student scanner for lecturers.
-    if (_role == 'lecturer' && selected == 4) {
-      selected = 1;
+    if (mustChangePassword) selected = AppPage.password;
+
+    if (selected != AppPage.password && !pages.contains(selected)) {
+      selected = AppPage.overview;
     }
 
-    Widget page;
-
-    if (selected == 0) {
-      page = const DashboardScreen();
-    } else if (selected == 15) {
-      page = const PasswordScreen();
-    } else {
-      page = ManagementScreen(
-        index: selected,
-        title: context.tr(titles[selected]),
-      );
-    }
+    final Widget page = switch (selected) {
+      AppPage.overview => DashboardScreen(
+        key: ValueKey(access.role),
+        onOpenActivity: (id) => _openPage(AppPage.activityDetails, id),
+      ),
+      AppPage.password => const PasswordScreen(),
+      AppPage.activities => ActivitiesScreen(
+        key: ValueKey('activities-${access.role}-$activityContextId'),
+        navigation: access,
+        initialPage: activityPage,
+        activityId: activityContextId,
+        onNavigate: _openPage,
+      ),
+      _ => ManagementScreen(
+        key: ValueKey('${access.role}-${selected.name}'),
+        index: selected.screenIndex,
+        activityId: selected == AppPage.checkIn ? checkInActivityId : null,
+        onNavigate: _openPage,
+        title: context.tr(access.titleFor(selected)),
+      ),
+    };
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: wide ? null : Drawer(width: 238, child: _sidebar(access)),
       body: Row(
         children: [
-          if (wide) _sidebar(),
+          if (wide) _sidebar(access),
           Expanded(
             child: Column(
               children: [
@@ -127,15 +141,10 @@ class _AppShellState extends State<AppShell> {
                     children: [
                       if (!wide)
                         IconButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  context.tr('เมนูอยู่ในปุ่มรายการด้านล่าง'),
-                                ),
-                              ),
-                            );
-                          },
+                          key: const ValueKey('open-navigation'),
+                          tooltip: context.tr('เปิดเมนู'),
+                          onPressed: () =>
+                              _scaffoldKey.currentState?.openDrawer(),
                           icon: const Icon(Icons.menu),
                         ),
                       const Text(
@@ -148,21 +157,29 @@ class _AppShellState extends State<AppShell> {
                       ),
                       const Spacer(),
                       const LanguageSwitcher(),
-                      if (MediaQuery.sizeOf(context).width >= 650) ...[
-                        const Icon(
-                          Icons.notifications_none,
-                          color: Color(0xFF52657A),
+                      if (access.isStudent && !mustChangePassword)
+                        StudentActivityAlerts(
+                          automaticallyShow: selected != AppPage.checkIn,
+                          onOpenActivity: (id) =>
+                              _openPage(AppPage.activityDetails, id),
                         ),
+                      if (MediaQuery.sizeOf(context).width >= 650) ...[
+                        if (!access.isStudent)
+                          const Icon(
+                            Icons.notifications_none,
+                            color: Color(0xFF52657A),
+                          ),
                         const SizedBox(width: 18),
                         CircleAvatar(
                           radius: 16,
                           backgroundColor: const Color(0xFFE5F0FF),
                           child: Text(
                             (user['full_name'] ?? 'U')
-                                .toString()
-                                .characters
-                                .first
-                                .toUpperCase(),
+                                    .toString()
+                                    .characters
+                                    .firstOrNull
+                                    ?.toUpperCase() ??
+                                'U',
                             style: const TextStyle(color: Color(0xFF1265E8)),
                           ),
                         ),
@@ -174,12 +191,10 @@ class _AppShellState extends State<AppShell> {
                         const SizedBox(width: 10),
                       ],
                       PopupMenuButton<String>(
-                        onSelected: (v) async {
-                          if (v == 'logout') {
+                        onSelected: (value) async {
+                          if (value == 'logout') {
                             await ApiService.logout();
-
                             if (!context.mounted) return;
-
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
@@ -188,9 +203,7 @@ class _AppShellState extends State<AppShell> {
                               (_) => false,
                             );
                           } else {
-                            setState(() {
-                              selected = 15;
-                            });
+                            _selectPage(AppPage.password);
                           }
                         },
                         itemBuilder: (_) => [
@@ -213,28 +226,22 @@ class _AppShellState extends State<AppShell> {
           ),
         ],
       ),
-      bottomNavigationBar: wide
+      bottomNavigationBar: wide || pages.length < 2
           ? null
           : NavigationBar(
-              selectedIndex: !mobileIndices.contains(selected)
-                  ? 0
-                  : mobileIndices.indexOf(selected),
-              onDestinationSelected: (v) {
-                setState(() {
-                  selected = mobileIndices[v];
-                });
-              },
+              selectedIndex: pages.contains(selected)
+                  ? pages.indexOf(selected)
+                  : 0,
+              onDestinationSelected: (index) => _selectPage(pages[index]),
               destinations: [
-                for (final i in mobileIndices)
+                for (final item in pages)
                   NavigationDestination(
-                    icon: Icon(icons[i]),
-                    label: context.tr(switch (i) {
-                      0 => 'ภาพรวม',
-                      2 => 'รายละเอียด',
-                      3 => 'ผู้เข้าร่วม',
-                      13 => 'คะแนนสะสม',
-                      15 => 'รหัสผ่าน',
-                      _ => titles[i],
+                    key: ValueKey('bottom-${item.name}'),
+                    icon: Icon(item.icon),
+                    label: context.tr(switch (item) {
+                      AppPage.overview => 'ภาพรวม',
+                      AppPage.points => 'คะแนนสะสม',
+                      _ => item.title,
                     }),
                   ),
               ],
@@ -242,11 +249,11 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  Widget _sidebar() {
-    return SizedBox(
-      width: 238,
-      child: Material(
-        color: const Color(0xFF102A4C),
+  Widget _sidebar(AppNavigation access) => SizedBox(
+    width: 238,
+    child: Material(
+      color: const Color(0xFF102A4C),
+      child: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 20),
@@ -267,38 +274,37 @@ class _AppShellState extends State<AppShell> {
             ),
             const SizedBox(height: 24),
             Expanded(
-              child: ListView.builder(
-                itemCount: _visibleMenuIndices.length,
-                itemBuilder: (_, position) {
-                  final i = _visibleMenuIndices[position];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 2,
-                    ),
-                    child: ListTile(
-                      dense: true,
-                      selected: selected == i,
-                      selectedTileColor: const Color(0xFF2366A7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+              child: ListView(
+                children: [
+                  for (final item
+                      in (mustChangePassword
+                          ? [AppPage.password]
+                          : access.primaryPages))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 2,
                       ),
-                      leading: Icon(icons[i], color: Colors.white, size: 19),
-                      title: Text(
-                        context.tr(titles[i]),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
+                      child: ListTile(
+                        key: ValueKey('sidebar-${item.name}'),
+                        dense: true,
+                        selected: selected == item,
+                        selectedTileColor: const Color(0xFF2366A7),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        leading: Icon(item.icon, color: Colors.white, size: 19),
+                        title: Text(
+                          context.tr(access.titleFor(item)),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                        onTap: () => _selectPage(item),
                       ),
-                      onTap: () {
-                        setState(() {
-                          selected = i;
-                        });
-                      },
                     ),
-                  );
-                },
+                ],
               ),
             ),
             const Padding(
@@ -311,6 +317,6 @@ class _AppShellState extends State<AppShell> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
